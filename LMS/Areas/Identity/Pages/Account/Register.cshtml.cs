@@ -11,6 +11,7 @@ using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using ASP;
 using LMS.Models;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authentication;
@@ -194,6 +195,33 @@ namespace LMS.Areas.Identity.Pages.Account
         /// <returns>The uID of the new user</returns>
         string CreateNewUser( string firstName, string lastName, DateTime DOB, string departmentAbbrev, string role )
         {
+            // find highest unid
+            var s_query =
+                from s in db.Students
+                where s.UId == db.Students.Max(st => s.UId)
+                select s.UId;
+            var a_query =
+                from s in db.Professors
+                where s.UId == db.Professors.Max(st => s.UId)
+                select s.UId;
+            var p_query =
+                from s in db.Administrators
+                where s.UId == db.Administrators.Max(st => s.UId)
+                select s.UId;
+            var uids = new List<string>();
+            uids.Add(s_query.First().ToString());
+            uids.Add(a_query.First().ToString());
+            uids.Add(p_query.First().ToString());
+            var maxUid = uids
+                .OrderByDescending(uid => int.Parse(uid.Substring(1))) // remove the 'u' and parse the number
+                .First();
+
+
+            if (role == "Student")
+            {
+                var student = new Student { FirstName = firstName, LastName = lastName };
+            }
+            
             return "unknown";
         }
 
