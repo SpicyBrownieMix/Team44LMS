@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LMS;
 
 public class Program
+// test
 {
     public static async Task Main(string[] args)
     {
