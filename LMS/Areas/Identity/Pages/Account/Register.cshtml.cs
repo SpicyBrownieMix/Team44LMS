@@ -209,20 +209,47 @@ namespace LMS.Areas.Identity.Pages.Account
                 where s.UId == db.Administrators.Max(st => s.UId)
                 select s.UId;
             var uids = new List<string>();
-            uids.Add(s_query.First().ToString());
-            uids.Add(a_query.First().ToString());
-            uids.Add(p_query.First().ToString());
-            var maxUid = uids
-                .OrderByDescending(uid => int.Parse(uid.Substring(1))) // remove the 'u' and parse the number
-                .First();
+            if (s_query.Any())
+                uids.Add(s_query.First().ToString());
+            if (a_query.Any())
+                uids.Add(a_query.First().ToString());
+            if (p_query.Any())
+                uids.Add(p_query.First().ToString());
+            string maxUid = "u0000000";
+            if (uids.Any())
+            {
+                maxUid = uids.OrderByDescending(uid => int.Parse(uid.Substring(1))).First();
+            }
 
-
+            var oldUid = int.Parse(maxUid.Substring(1));
+            var newUid = oldUid + 1;
+            string newUidString = "u" + newUid.ToString().PadLeft(7, '0');
+            
             if (role == "Student")
             {
-                var student = new Student { FirstName = firstName, LastName = lastName };
+                var user = new Student { UId = newUidString, FirstName = firstName, LastName = lastName, Dob = DateOnly.FromDateTime(DOB), Major = departmentAbbrev };
+                db.Students.Add( user );
+                db.SaveChanges();
             }
-            
-            return "unknown";
+            else if (role == "Professor")
+            {
+                var user = new Professor
+                {
+                    UId = newUidString, FirstName = firstName, LastName = lastName, Dob = DateOnly.FromDateTime(DOB),
+                    Department = departmentAbbrev
+                };
+                db.Professors.Add( user );
+                db.SaveChanges();
+            }
+            else if (role == "Administrator")
+            {
+                var user = new Administrator {  UId = newUidString, FirstName = firstName, LastName = lastName, Dob = DateOnly.FromDateTime(DOB) };
+                db.Administrators.Add( user );
+                db.SaveChanges();
+            }
+                    
+
+            return newUidString;
         }
         /*******End code to modify********/
     }

@@ -50,8 +50,17 @@ namespace LMS.Controllers
         /// false if the department already exists, true otherwise.</returns>
         public IActionResult CreateDepartment(string subject, string name)
         {
-            
-            return Json(new { success = false});
+            try
+            {
+                var dept = new Department { Name = name, Subject = subject };
+                db.Departments.Add(dept);
+                db.SaveChanges();
+                return Json(new { success = true});
+            }
+            catch
+            {
+                return Json(new { success = false});
+            }
         }
 
 
@@ -65,8 +74,14 @@ namespace LMS.Controllers
         /// <returns>The JSON result</returns>
         public IActionResult GetCourses(string subject)
         {
-            
-            return Json(null);
+            var query = from c in db.Courses
+                where c.Subject == subject
+                select new
+                {
+                    number = c.Number,
+                    name = c.Name
+                };
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -80,9 +95,15 @@ namespace LMS.Controllers
         /// <returns>The JSON result</returns>
         public IActionResult GetProfessors(string subject)
         {
-            
-            return Json(null);
-            
+            var query = from p in db.Professors
+                where p.Department == subject
+                select new
+                {
+                    lname = p.LastName,
+                    fname = p.FirstName,
+                    uid = p.UId
+                };
+            return Json(query.ToArray());
         }
 
 
@@ -98,7 +119,17 @@ namespace LMS.Controllers
         /// false if the course already exists, true otherwise.</returns>
         public IActionResult CreateCourse(string subject, int number, string name)
         {           
-            return Json(new { success = false });
+            try
+            {
+                var course = new Course { Name = name, Subject = subject, Number = (uint)number };
+                db.Courses.Add(course);
+                db.SaveChanges();
+                return Json(new { success = true});
+            }
+            catch
+            {
+                return Json(new { success = false});
+            }
         }
 
 
@@ -121,7 +152,26 @@ namespace LMS.Controllers
         /// true otherwise.</returns>
         public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
         {            
-            return Json(new { success = false});
+            try
+            {
+                var query = from c in db.Courses
+                    where c.Subject == subject && c.Number == number
+                    select c.CourseId;
+                var cid = query.First();
+                
+                var class_ = new Class
+                {
+                    Location = location, StartTime =  TimeOnly.FromDateTime(start), EndTime = TimeOnly.FromDateTime(end),
+                    SemesterSeason = season, SemesterYear = (uint)year, CourseId = cid, Professor = instructor 
+                };
+                db.Classes.Add(class_);
+                db.SaveChanges();
+                return Json(new { success = true});
+            }
+            catch
+            {
+                return Json(new { success = false});
+            }
         }
 
 
