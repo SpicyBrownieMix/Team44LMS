@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -76,7 +77,25 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetMyClasses(string uid)
         {           
-            return Json(null);
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+                
+                from t in temp1
+                join e in db.Enrolleds
+                    on cl.ClassId equals e.ClassId
+                where e.Student == uid
+                select new
+                {
+                    subject = t.Subject,
+                    number = t.Number,
+                    name = t.Name,
+                    season = cl.SemesterSeason,
+                    year = cl.SemesterYear,
+                    grade = e.Grade == null ? "--" : (string?) e.Grade,
+                };
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -95,7 +114,30 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {            
-            return Json(null);
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+
+                from t1 in temp1
+                join ac in db.AssignmentCategories
+                    on cl.ClassId equals ac.ClassId
+                    into temp2
+                
+                from t2 in temp2
+                join a in db.Assignments
+                    on t2.Acid equals a.Acid 
+                where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season && cl.SemesterYear == year 
+                select new
+                {
+                    aname = a.Name,
+                    cname =  t2.Name,
+                    due = a.DueDate,
+                    score = from s in a.Submissions
+                        where s.Student == uid && s.AssignmentId == a.AssignmentId
+                            select s.Score
+                };
+            return Json(query.ToArray());
         }
 
 
@@ -119,8 +161,72 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing {success = true/false}</returns>
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
-        {           
-            return Json(new { success = false });
+        {
+            try
+            {
+                var q1 = from cl in db.Classes
+                    join co in db.Courses
+                        on cl.CourseId equals co.CourseId
+                        into temp1
+
+                    from t1 in temp1
+                    join ac in db.AssignmentCategories
+                        on cl.ClassId equals ac.ClassId
+                        into temp2
+                
+                    from t2 in temp2
+                    join a in db.Assignments
+                        on t2.Acid equals a.Acid 
+                        into temp3
+                
+                    from t3 in temp3
+                    join s in db.Submissions
+                        on t3.AssignmentId equals s.AssignmentId
+                    where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season &&
+                          cl.SemesterYear == year && t2.Name == category && t3.Name == asgname 
+                    select s;
+
+                if (q1.Any())
+                {
+                    Submission sub = q1.First();
+                    sub.Contents = contents;
+                    sub.SubmissionTime = DateTime.Now;
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                
+                var q2 = from cl in db.Classes
+                    join co in db.Courses
+                        on cl.CourseId equals co.CourseId
+                        into temp1
+
+                    from t1 in temp1
+                    join ac in db.AssignmentCategories
+                        on cl.ClassId equals ac.ClassId
+                        into temp2
+
+                    from t2 in temp2
+                    join a in db.Assignments
+                        on t2.Acid equals a.Acid
+                    where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season &&
+                          cl.SemesterYear == year && t2.Name == category && a.Name == asgname 
+                    select a.AssignmentId;
+
+                if (q2.Any())
+                {
+                    var sub = new Submission { AssignmentId = q2.First(), Student = uid , SubmissionTime = DateTime.Now , Contents = contents, Score = 0 };
+                    db.Submissions.Add(sub);
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+            
+                return Json(new { success = false });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+            
         }
 
 
@@ -135,8 +241,30 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing {success = {true/false}. 
         /// false if the student is already enrolled in the class, true otherwise.</returns>
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
-        {          
-            return Json(new { success = false});
+        {
+            try
+            {
+                var query = from cl in db.Classes
+                    join co in db.Courses
+                        on cl.CourseId equals co.CourseId
+                    where co.Subject == subject && co.Number == num && cl.SemesterSeason == season &&
+                          cl.SemesterYear == year
+                    select cl.ClassId;
+
+                if (query.Any())
+                {
+                    var enrolled = new Enrolled { ClassId = query.First(), Student = uid, Grade = null };
+                    db.Enrolleds.Add(enrolled);
+                    db.SaveChanges();
+                    return Json(new { success = true});
+                }
+
+                return Json(new { success = false});
+            }
+            catch
+            {
+                return Json(new { success = false});
+            }
         }
 
 
@@ -154,6 +282,7 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
         public IActionResult GetGPA(string uid)
         {            
+            
             return Json(null);
         }
                 

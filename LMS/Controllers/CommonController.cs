@@ -60,7 +60,7 @@ namespace LMS.Controllers
                 {
                     subject = d.Subject,
                     dname = d.Name,
-                    courses =  from c in db.Courses
+                    courses = from c in d.Courses
                         where c.Subject == d.Subject
                         select new
                         {
@@ -86,8 +86,33 @@ namespace LMS.Controllers
         /// <param name="number">The course number, as in 5530</param>
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
-        {            
-            return Json(null);
+        {
+            var query =
+                from co in db.Courses
+                join cl in db.Classes
+                    on co.CourseId equals cl.CourseId
+                    into temp
+                
+                from t in temp
+                join p in db.Professors
+                    on t.Professor equals p.UId
+                    into all_classes
+                
+                from ac in all_classes
+                where co.Subject == subject && co.Number == number
+                select new
+                {
+                    season = t.SemesterSeason,
+                    year = t.SemesterYear,
+                    location = t.Location,
+                    start = t.StartTime,
+                    end = t.EndTime,
+                    fname = ac.FirstName,
+                    lname = ac.LastName,
+                };
+            
+            
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -104,6 +129,7 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {            
+            
             return Content("");
         }
 
@@ -145,7 +171,45 @@ namespace LMS.Controllers
         /// or an object containing {success: false} if the user doesn't exist
         /// </returns>
         public IActionResult GetUser(string uid)
-        {           
+        {
+            var q1 = from s in db.Students
+                where s.UId == uid
+                select new
+                {
+                    fname = s.FirstName,
+                    lname = s.LastName,
+                    uid = s.UId,
+                    department = s.Major
+                };
+
+            if (q1.Any())
+                return Json(q1.First());
+            
+            var q2 = from p in db.Professors
+                where p.UId == uid
+                select new
+                {
+                    fname = p.FirstName,
+                    lname = p.LastName,
+                    uid = p.UId,
+                    department = p.Department   
+                };
+
+            if (q2.Any())
+                return Json(q2.First());
+            
+            var q3 = from a in db.Administrators
+                where a.UId == uid
+                select new
+                {
+                    fname = a.FirstName,
+                    lname = a.LastName,
+                    uid = a.UId
+                };
+            
+            if (q3.Any())
+                return Json(q3.First());
+            
             return Json(new { success = false });
         }
 

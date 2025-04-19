@@ -154,14 +154,22 @@ namespace LMS.Controllers
         {            
             try
             {
+                var start_time = TimeOnly.FromDateTime(start);
+                var end_time = TimeOnly.FromDateTime(end);
                 var query = from c in db.Courses
                     where c.Subject == subject && c.Number == number
                     select c.CourseId;
                 var cid = query.First();
                 
+                var q2 = from c in db.Classes
+                    where c.SemesterSeason == season && c.SemesterYear == year && c.Location == location && ((c.StartTime >= start_time && start_time <= c.EndTime) || (c.StartTime >= end_time && end_time <= c.EndTime)) 
+                    select c.CourseId;
+                if (q2.Any())
+                    return Json(new { success = false});
+                
                 var class_ = new Class
                 {
-                    Location = location, StartTime =  TimeOnly.FromDateTime(start), EndTime = TimeOnly.FromDateTime(end),
+                    Location = location, StartTime = start_time, EndTime = end_time,
                     SemesterSeason = season, SemesterYear = (uint)year, CourseId = cid, Professor = instructor 
                 };
                 db.Classes.Add(class_);
