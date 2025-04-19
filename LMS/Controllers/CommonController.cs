@@ -128,7 +128,26 @@ namespace LMS.Controllers
         /// <param name="asgname">The name of the assignment in the category</param>
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
-        {            
+        {
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+
+                from t1 in temp1
+                join ac in db.AssignmentCategories
+                    on cl.ClassId equals ac.ClassId
+                    into temp2
+
+                from t2 in temp2
+                join a in db.Assignments
+                    on t2.Acid equals a.Acid
+                where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season &&
+                      cl.SemesterYear == year && t2.Name == category && a.Name == asgname
+                select a.Contents;
+            
+            if (query.Any()) 
+                return Content(query.First());
             
             return Content("");
         }
@@ -150,6 +169,35 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {            
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+
+                from t1 in temp1
+                join ac in db.AssignmentCategories
+                    on cl.ClassId equals ac.ClassId
+                    into temp2
+                
+                from t2 in temp2
+                join a in db.Assignments
+                    on t2.Acid equals a.Acid 
+                    into temp3
+                
+                from t3 in temp3
+                join s in db.Submissions
+                    on t3.AssignmentId equals s.AssignmentId
+                    into temp4 
+                
+                from t4 in temp4
+                join st in db.Students
+                    on t4.Student equals st.UId
+                where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season && cl.SemesterYear == year && t2.Name == category && t3.Name == asgname && st.UId == uid
+                select t4.Contents;
+            
+            if (query.Any()) 
+                return Content(query.First());
+            
             return Content("");
         }
 

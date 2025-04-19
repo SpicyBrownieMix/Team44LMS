@@ -315,20 +315,38 @@ namespace LMS_CustomIdentity.Controllers
                     where t.Subject == subject && t.Number == num &&  cl.SemesterSeason == season && cl.SemesterYear == year && ac.Name == category
                     select ac.Acid;
                 
+                
                 if (query.Any())
                 {
                     var assignment = new Assignment { Name = asgname, MaxPoints = (uint) asgpoints, Contents = asgcontents, DueDate = asgdue, Acid = query.First() };
                     db.Assignments.Add(assignment);
                     db.SaveChanges();
                 }
-                
-                return Json(new { success = true });
             }
             catch 
             {
                 return Json(new { success = false });
             }
-            return Json(new { success = false });
+            
+            //update all student's grades
+            var q2 =
+                from cl in db.Classes
+                join e in db.Enrolleds
+                    on cl.ClassId equals e.ClassId
+                    into temp1
+
+                from t1 in temp1
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                where cl.SemesterSeason == season && cl.SemesterYear == year && co.Subject == subject &&
+                      co.Number == num
+                select t1;
+            
+            foreach (Enrolled e in q2)
+            {
+                UpdateGrade(subject, num, season, year, e.Student);
+            }
+            return Json(new { success = true });
         }
 
 
@@ -402,6 +420,47 @@ namespace LMS_CustomIdentity.Controllers
         /// <returns>A JSON object containing success = true/false</returns>
         public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
         {
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+
+                from t1 in temp1
+                join ac in db.AssignmentCategories
+                    on cl.ClassId equals ac.ClassId
+                    into temp2
+                
+                from t2 in temp2
+                join a in db.Assignments
+                    on t2.Acid equals a.Acid 
+                    into temp3
+                
+                from t3 in temp3
+                join s in db.Submissions
+                    on t3.AssignmentId equals s.AssignmentId
+                    into temp4 
+                
+                from t4 in temp4
+                join st in db.Students
+                    on t4.Student equals st.UId
+                where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season && cl.SemesterYear == year && t2.Name == category && t3.Name == asgname && st.UId == uid
+                select t4;
+            
+            if (query.Any() && UpdateGrade(subject, num, season, year, uid))
+            {
+                try
+                {
+                    var sub = query.First();
+                    sub.Score = (uint) score;
+                    db.SaveChanges();
+                    return Json(new { success = true });
+                }
+                catch 
+                {
+                    return Json(new { success = false });
+                }
+            }
+
             return Json(new { success = false });
         }
 
@@ -435,7 +494,99 @@ namespace LMS_CustomIdentity.Controllers
         }
 
 
-        
+        private bool UpdateGrade(string subject, int num, string season, int year, string uid)
+        {
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CourseId equals co.CourseId
+                    into temp1
+
+                from t1 in temp1
+                join ac in db.AssignmentCategories
+                    on cl.ClassId equals ac.ClassId
+                where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season && cl.SemesterYear == year
+                select new
+                {
+                    classid =  cl.ClassId,
+                    cat_weight = ac.Weight,
+                    assignments = from a in ac.Assignments
+                        select new
+                        {
+                            max = a.MaxPoints,
+                            submission = from sub in a.Submissions
+                                where sub.Student == uid && a.AssignmentId == sub.AssignmentId
+                                select sub.Score
+                        }
+                };
+            
+            uint cat_score = 0;
+            uint total_cat_weight = 0;
+            foreach (var assignment_category in query)
+            {
+                uint cat_total = 0;
+                foreach (var assignment in assignment_category.assignments)
+                {
+                    if (!assignment.submission.Any())
+                        continue;
+                    var a_score = (uint)assignment.submission.First() / (uint)assignment.max;
+                    cat_total += a_score;
+                }
+
+                cat_score += cat_total * assignment_category.cat_weight;
+                total_cat_weight += assignment_category.cat_weight;
+            }
+            var scaling_factor = 100 /  total_cat_weight;
+            uint score = scaling_factor * cat_score;
+            string grade;
+
+            if (score >= 93)
+                grade = "A";
+            else if (score >= 90)
+                grade = "A-";
+            else if (score >= 87)
+                grade = "B+";
+            else if (score >= 83)
+                grade = "B";
+            else if (score >= 80)
+                grade = "B-";
+            else if (score >= 77)
+                grade = "C+";
+            else if (score >= 73)
+                grade = "C";
+            else if (score >= 70)
+                grade = "C-";
+            else if (score >= 67)
+                grade = "D+";
+            else if (score >= 63)
+                grade = "D";
+            else if (score >= 60)
+                grade = "D-";
+            else 
+                grade = "E";
+
+
+            var q2 = from e in db.Enrolleds
+                where e.Student == uid && query.First().classid == e.ClassId
+                select e;
+            
+            if (q2.Any())
+            {
+                try
+                {
+                    var enrolled = q2.First();
+                    enrolled.Grade = grade;
+                    db.SaveChanges();
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
         /*******End code to modify********/
     }
 }

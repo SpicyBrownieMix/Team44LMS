@@ -173,18 +173,23 @@ namespace LMS.Controllers
                     join ac in db.AssignmentCategories
                         on cl.ClassId equals ac.ClassId
                         into temp2
-                
+
                     from t2 in temp2
                     join a in db.Assignments
-                        on t2.Acid equals a.Acid 
+                        on t2.Acid equals a.Acid
                         into temp3
-                
+
                     from t3 in temp3
                     join s in db.Submissions
                         on t3.AssignmentId equals s.AssignmentId
+                        into temp4
+
+                    from t4 in temp4
+                    join st in db.Students
+                        on t4.Student equals st.UId
                     where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season &&
-                          cl.SemesterYear == year && t2.Name == category && t3.Name == asgname 
-                    select s;
+                          cl.SemesterYear == year && t2.Name == category && t3.Name == asgname && st.UId == uid
+                    select t4;
 
                 if (q1.Any())
                 {
