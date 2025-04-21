@@ -342,7 +342,7 @@ namespace LMS_CustomIdentity.Controllers
                       co.Number == num
                 select t1;
             
-            foreach (Enrolled e in q2)
+            foreach (Enrolled e in q2.ToArray())
             {
                 UpdateGrade(subject, num, season, year, e.Student);
             }
@@ -446,13 +446,14 @@ namespace LMS_CustomIdentity.Controllers
                 where t1.Subject == subject && t1.Number == num && cl.SemesterSeason == season && cl.SemesterYear == year && t2.Name == category && t3.Name == asgname && st.UId == uid
                 select t4;
             
-            if (query.Any() && UpdateGrade(subject, num, season, year, uid))
+            if (query.Any())
             {
                 try
                 {
                     var sub = query.First();
                     sub.Score = (uint) score;
                     db.SaveChanges();
+                    UpdateGrade(subject, num, season, year, uid);
                     return Json(new { success = true });
                 }
                 catch 
@@ -519,24 +520,34 @@ namespace LMS_CustomIdentity.Controllers
                         }
                 };
             
-            uint cat_score = 0;
-            uint total_cat_weight = 0;
-            foreach (var assignment_category in query)
+            float cat_score = 0;
+            float total_cat_weight = 0;
+            foreach (var assignment_category in query.ToArray())
             {
-                uint cat_total = 0;
-                foreach (var assignment in assignment_category.assignments)
+                float cat_total = 0;
+                float cat_max = 0;
+                foreach (var assignment in assignment_category.assignments.ToArray())
                 {
-                    if (!assignment.submission.Any())
-                        continue;
-                    var a_score = (uint)assignment.submission.First() / (uint)assignment.max;
-                    cat_total += a_score;
+                    cat_max += (float)assignment.max;
+                    if (assignment.submission.Any())
+                    {
+                        cat_total += (float)assignment.submission.First();
+                        Console.WriteLine((float)assignment.submission.First() + " " + (float)assignment.max);
+                    }
+                    else
+                    {
+                        Console.WriteLine( (float)assignment.max);
+                    }
                 }
 
-                cat_score += cat_total * assignment_category.cat_weight;
+                cat_score += (cat_total / cat_max) * assignment_category.cat_weight;
                 total_cat_weight += assignment_category.cat_weight;
+                Console.WriteLine(cat_score + " " + total_cat_weight);
             }
-            var scaling_factor = 100 /  total_cat_weight;
-            uint score = scaling_factor * cat_score;
+
+            var scaling_factor = 100 / total_cat_weight;
+            float score = scaling_factor * cat_score;
+            Console.WriteLine(scaling_factor + " " + score);
             string grade;
 
             if (score >= 93)

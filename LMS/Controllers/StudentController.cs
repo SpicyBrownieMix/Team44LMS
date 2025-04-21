@@ -287,8 +287,48 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
         public IActionResult GetGPA(string uid)
         {            
+            var query = from e in db.Enrolleds
+                where e.Student == uid
+                    select e;
             
-            return Json(null);
+            if (!query.Any())
+                return Json(new { gpa = 0.0 });
+
+            double credit_hours = 0;
+            double grade_points = 0;
+            foreach (Enrolled e in query.ToArray())
+            {
+                if (e.Grade == null)
+                    continue;
+                
+                string grade = e.Grade.ToString();
+                credit_hours += 4;
+                if (grade == "A")
+                    grade_points += 4;
+                if (grade == "A-")
+                    grade_points += 3.7;
+                if (grade == "B+")
+                    grade_points += 3.3;
+                if (grade == "B")
+                    grade_points += 3;
+                if (grade == "B-")
+                    grade_points += 2.7;
+                if (grade == "C+")
+                    grade_points += 2.3;
+                if (grade == "C")
+                    grade_points += 2.0;
+                if (grade == "C-")
+                    grade_points += 1.7;
+                if (grade == "D+")
+                    grade_points += 1.3;
+                if (grade == "D")
+                    grade_points += 1.0;
+                if (grade == "D-")
+                    grade_points += 0.7;
+            }
+
+            var average = grade_points / credit_hours;
+            return Json(new { gpa = average });
         }
                 
         /*******End code to modify********/
