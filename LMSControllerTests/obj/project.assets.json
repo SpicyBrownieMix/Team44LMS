@@ -11135,11 +11135,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/eva/Downloads/LMSHandout/LMSControllerTests/LMSControllerTests.csproj",
+      "projectUniqueName": "/Users/eva/Documents/College/Junior/CS5530/LMSHandout/LMSControllerTests/LMSControllerTests.csproj",
       "projectName": "LMSControllerTests",
-      "projectPath": "/Users/eva/Downloads/LMSHandout/LMSControllerTests/LMSControllerTests.csproj",
+      "projectPath": "/Users/eva/Documents/College/Junior/CS5530/LMSHandout/LMSControllerTests/LMSControllerTests.csproj",
       "packagesPath": "/Users/eva/.nuget/packages/",
-      "outputPath": "/Users/eva/Downloads/LMSHandout/LMSControllerTests/obj/",
+      "outputPath": "/Users/eva/Documents/College/Junior/CS5530/LMSHandout/LMSControllerTests/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/eva/.nuget/NuGet/NuGet.Config"
@@ -11155,8 +11155,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "/Users/eva/Downloads/LMSHandout/LMS/LMS.csproj": {
-              "projectPath": "/Users/eva/Downloads/LMSHandout/LMS/LMS.csproj"
+            "/Users/eva/Documents/College/Junior/CS5530/LMSHandout/LMS/LMS.csproj": {
+              "projectPath": "/Users/eva/Documents/College/Junior/CS5530/LMSHandout/LMS/LMS.csproj"
             }
           }
         }

@@ -304,27 +304,27 @@ namespace LMS.Controllers
                 string grade = e.Grade.ToString();
                 credit_hours += 4;
                 if (grade == "A")
-                    grade_points += 4;
+                    grade_points += 4 * 4;
                 if (grade == "A-")
-                    grade_points += 3.7;
+                    grade_points += 3.7 * 4;
                 if (grade == "B+")
-                    grade_points += 3.3;
+                    grade_points += 3.3 * 4;
                 if (grade == "B")
-                    grade_points += 3;
+                    grade_points += 3 * 4;
                 if (grade == "B-")
-                    grade_points += 2.7;
+                    grade_points += 2.7 * 4;
                 if (grade == "C+")
-                    grade_points += 2.3;
+                    grade_points += 2.3 * 4;
                 if (grade == "C")
-                    grade_points += 2.0;
+                    grade_points += 2.0 * 4;
                 if (grade == "C-")
-                    grade_points += 1.7;
+                    grade_points += 1.7 * 4;
                 if (grade == "D+")
-                    grade_points += 1.3;
+                    grade_points += 1.3 * 4;
                 if (grade == "D")
-                    grade_points += 1.0;
+                    grade_points += 1.0 * 4;
                 if (grade == "D-")
-                    grade_points += 0.7;
+                    grade_points += 0.7 * 4;
             }
 
             var average = grade_points / credit_hours;
