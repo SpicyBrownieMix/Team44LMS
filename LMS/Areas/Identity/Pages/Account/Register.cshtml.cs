@@ -198,15 +198,15 @@ namespace LMS.Areas.Identity.Pages.Account
             // find highest unid
             var s_query =
                 from s in db.Students
-                where s.UId == db.Students.Max(st => s.UId)
-                select s.UId;
-            var a_query =
-                from s in db.Professors
-                where s.UId == db.Professors.Max(st => s.UId)
+                where s.UId == db.Students.Max(st => st.UId)
                 select s.UId;
             var p_query =
+                from s in db.Professors
+                where s.UId == db.Professors.Max(st => st.UId)
+                select s.UId;
+            var a_query =
                 from s in db.Administrators
-                where s.UId == db.Administrators.Max(st => s.UId)
+                where s.UId == db.Administrators.Max(st => st.UId)
                 select s.UId;
             var uids = new List<string>();
             if (s_query.Any())
